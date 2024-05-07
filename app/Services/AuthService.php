@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Eloquent\Interface\AuthServiceInterface;
 use App\Models\User;
+use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\Response as HttpResponses;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService implements AuthServiceInterface
 {
@@ -17,14 +19,15 @@ class AuthService implements AuthServiceInterface
     {
         $success = false;
         $errorMessage = '';
+        $expiresAt = null;
         $statusCode = HttpResponses::HTTP_FORBIDDEN;
+        $customExpireTime = now()->addMinute()->timestamp;
 
-        if (!$token = auth('api')->attempt($credentials)) {
+        if (!$token = JWTAuth::attempt($credentials, ['exp' => $customExpireTime])) {
             $errorMessage = __('auth.invalid-credentials');
             $statusCode = HttpResponses::HTTP_UNPROCESSABLE_ENTITY;
         } else {
-
-            $user = auth('api')->user();
+            $user = request()->user();
 
             if ($user->status != $user::ACTIVE) {
                 $errorMessage = __('auth.inactive');
@@ -33,22 +36,22 @@ class AuthService implements AuthServiceInterface
                 $success = false;
             } else {
                 $success = true;
+                $expiresAt = Carbon::now()->addMinutes(config('jwt.ttl'))->timestamp;
             }
 
         }
 
         if ($success) {
             return [
-                'token' => $token,
-                'user' => $user,
-                'error' => false,
+                'data' => [
+                    'token' => $token,
+                    'user' => $user,
+                    'ttl' => $expiresAt
+                ],
                 'message' => __('auth.loggedin'),
-                'status' => $statusCode
             ];
         } else {
             return [
-                'token' => null,
-                'user' => null,
                 'error' => true,
                 'message' => $errorMessage,
                 'status' => $statusCode

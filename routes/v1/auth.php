@@ -18,4 +18,7 @@ Route::controller(AuthController::class)->group(function ($group) {
 
     Route::put('/update-profile', 'updateProfile')
         ->name('auth.update-profile');
+
+    Route::post('/refresh/token', 'refresh')
+        ->name('auth.refresh-token');
 });

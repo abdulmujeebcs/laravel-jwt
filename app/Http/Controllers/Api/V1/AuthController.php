@@ -10,14 +10,14 @@ use App\Http\Requests\V1\LoginRequest;
 use App\Http\Requests\V1\RegisterationRequest;
 use App\Http\Requests\V1\UpdateProfileRequest;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
+use Carbon\Carbon;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Client\Request;
 use Symfony\Component\HttpFoundation\Response as HttpResponses;
 use Illuminate\Support\Facades\Password;
-use Arr;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -29,30 +29,21 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        ['message' => $message, 'error' => $error, 'status' => $status, 'user' => $user, 'token' => $token] =
+        $response =
             $this->authService->attemptLogin(
                 $request->only(['email', 'password']),
                 $request->remember
             );
 
-        if ($error) {
-            return response()->error(
-                message: $message,
-                status: $status
-            );
+        if (@$response['error']) {
+            return response()->error(...$response);
         }
-        return response()->success(
-            data: [
-                'user' => $user,
-                'token' => $token,
-            ],
-            message: $message,
-        );
+        return response()->success(...$response);
     }
 
     public function updateProfile(UpdateProfileRequest $request)
     {
-        $user = auth('api')->user();
+        $user = request()->user();
         $data = $this->repository->update($request->validated(), $user->id);
         return response()->success(
             message: __('auth.profile-updated'),
@@ -64,8 +55,31 @@ class AuthController extends Controller
     {
         return response()->success(
             message: __('auth.show-profile'),
-            data: auth('api')->user(),
+            data: request()->user(),
         );
+    }
+
+    /**
+     * Refresh a token.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function refresh()
+    {
+        try {
+            // Attempt to refresh the token
+            $newToken = JWTAuth::refresh(JWTAuth::getToken());
+            $expiresAt = Carbon::now()
+                ->addMinutes(config('jwt.ttl'))->timestamp;
+
+            return response()->json([
+                'access_token' => $newToken,
+                'token_type' => 'bearer',
+                'ttl' => $expiresAt
+            ]);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Unable to refresh token'], HttpResponses::HTTP_UNAUTHORIZED);
+        }
     }
 
     public function logout()
