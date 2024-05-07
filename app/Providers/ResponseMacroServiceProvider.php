@@ -10,7 +10,7 @@ class ResponseMacroServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        ResponseFacade::macro('success', function ($message, $data, $status = HttpResponses::HTTP_OK) {
+        ResponseFacade::macro('success', function ($message = '', $data = [], $status = HttpResponses::HTTP_OK) {
             return response()->json([
                 'success' => true,
                 'status' => $status,

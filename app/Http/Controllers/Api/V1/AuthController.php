@@ -16,8 +16,6 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Client\Request;
 use Symfony\Component\HttpFoundation\Response as HttpResponses;
 use Illuminate\Support\Facades\Password;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -66,20 +64,16 @@ class AuthController extends Controller
      */
     public function refresh()
     {
-        try {
-            // Attempt to refresh the token
-            $newToken = JWTAuth::refresh(JWTAuth::getToken());
-            $expiresAt = Carbon::now()
-                ->addMinutes(config('jwt.ttl'))->timestamp;
-
-            return response()->json([
-                'access_token' => $newToken,
-                'token_type' => 'bearer',
-                'ttl' => $expiresAt
-            ]);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Unable to refresh token'], HttpResponses::HTTP_UNAUTHORIZED);
+        $data = $this->authService->refreshToken();
+        if (@$data['error']) {
+            return response()->success(
+                message: $data['message'],
+                status: $data['status'],
+            );
         }
+        return response()->success(
+            data: $data,
+        );
     }
 
     public function logout()

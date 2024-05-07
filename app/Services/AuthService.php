@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\Response as HttpResponses;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthService implements AuthServiceInterface
 {
@@ -62,5 +63,30 @@ class AuthService implements AuthServiceInterface
     public function logout()
     {
         auth()->logout();
+    }
+
+    public function getAccessToken(): string
+    {
+        return JWTAuth::getToken();
+    }
+    public function refreshToken(): array
+    {
+        try {
+            $refreshToken = JWTAuth::refresh($this->getAccessToken());
+            $expiresAt = Carbon::now()
+                ->addMinutes(config('jwt.ttl'))->timestamp;
+
+            return [
+                'access_token' => $refreshToken,
+                'token_type' => 'bearer',
+                'ttl' => $expiresAt
+            ];
+        } catch (JWTException $e) {
+            return [
+                'error' => true,
+                'message' => 'Unable to refresh token',
+                'status' => HttpResponses::HTTP_UNAUTHORIZED
+            ];
+        }
     }
 }
