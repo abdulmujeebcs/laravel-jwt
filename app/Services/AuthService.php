@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Eloquent\Interface\AuthServiceInterface;
 use App\Models\User;
-use Illuminate\Http\Response as HttpResponses;
+use Symfony\Component\HttpFoundation\Response as HttpResponses;
 
 class AuthService implements AuthServiceInterface
 {

@@ -14,7 +14,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Client\Request;
-use Illuminate\Http\Response as HttpResponses;
+use Symfony\Component\HttpFoundation\Response as HttpResponses;
 use Illuminate\Support\Facades\Password;
 use Arr;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
