@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Eloquent\Interface\AuthServiceInterface;
@@ -16,6 +17,9 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Client\Request;
 use Symfony\Component\HttpFoundation\Response as HttpResponses;
 use Illuminate\Support\Facades\Password;
+use OpenApi\Attributes as OA;
+
+#[OA\Tag(name: 'Authentication')]
 
 class AuthController extends Controller
 {
@@ -25,6 +29,16 @@ class AuthController extends Controller
             ->except(['login', 'register']);
     }
 
+
+    #[OA\Post(
+        path: '/api/v1/auth/login',
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, description: 'User Login'),
+            new OA\Response(response: 401, description: 'UnAuthorized'),
+            new OA\Response(response: 422, description: 'Invalid Credentials'),
+        ]
+    )]
     public function login(LoginRequest $request)
     {
         $response =
@@ -39,6 +53,14 @@ class AuthController extends Controller
         return response()->success(...$response);
     }
 
+    #[OA\Put(
+        path: '/api/v1/auth/update-profile',
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, description: 'Update Profile'),
+            new OA\Response(response: 401, description: 'UnAuthorized'),
+        ]
+    )]
     public function updateProfile(UpdateProfileRequest $request)
     {
         $user = request()->user();
@@ -49,6 +71,14 @@ class AuthController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/auth/user',
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, description: 'Get Authenticated User'),
+            new OA\Response(response: 401, description: 'UnAuthorized'),
+        ]
+    )]
     public function getUser()
     {
         return response()->success(
@@ -76,6 +106,14 @@ class AuthController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/auth/logout',
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, description: 'User Logout'),
+            new OA\Response(response: 401, description: 'UnAuthorized'),
+        ]
+    )]
     public function logout()
     {
         $this->authService->logout();
@@ -87,6 +125,13 @@ class AuthController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/auth/register',
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, description: 'User Registeration'),
+        ]
+    )]
     public function register(RegisterationRequest $request)
     {
         $user = $this->repository->create($request->validated());
